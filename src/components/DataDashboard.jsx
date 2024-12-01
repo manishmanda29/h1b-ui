@@ -19,7 +19,6 @@ const DataDashboard = ({data}) => {
           const continuingApproval = parseInt(record.ContinuingApproval || "0", 10);
           const initialDenial = parseInt(record.InitialDenial || "0", 10);
           const continuingDenial = parseInt(record.ContinuingDenial || "0", 10);
-          console.log(initialApproval)
       
           // Update totals
           totalPetitions += initialApproval + initialDenial + continuingApproval + continuingDenial;
@@ -30,7 +29,6 @@ const DataDashboard = ({data}) => {
           uniqueEmployers.add(record.EmployerName);
         });
       
-        console.log(totalPetitions)
         // Prepare array of objects for the card component
         return [
           { title: "Total Petitions Filed", value: totalPetitions },
@@ -41,7 +39,6 @@ const DataDashboard = ({data}) => {
       
       // Process the data
       const cardData = processH1BData(data);
-      console.log(cardData)
       
       
 

@@ -146,7 +146,7 @@ const MultiLevelMap = ({ data }) => {
 
   const renderBarChart = () => {
     const margin = { top: 20, right: 30, bottom: 50, left: 300 };
-    const width = 900 - margin.left - margin.right;
+    const width = 1000 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
     console.log(companyData)
   
@@ -175,12 +175,14 @@ const MultiLevelMap = ({ data }) => {
       .style('font-size', '12px');
   
     return (
-      <svg width={width + margin.left + margin.right} height={height + margin.top + margin.bottom}>
+      <svg width={1000} height={height + margin.top + margin.bottom}>
         <g transform={`translate(${margin.left},${margin.top})`}>
           {/* Bars for each company */}
           {companyData.map((company, i) => {
             let xOffset = 0;
+            console.log(company)
             const totalPetitions = company.initialApproval + company.initialDenial + company.continuingApproval + company.continuingDenial;
+            console.log(totalPetitions)
             return (
               <g key={i} transform={`translate(0,${y(company.company)})`}>
                 {['initialApproval', 'initialDenial', 'continuingApproval', 'continuingDenial'].map((category, index) => {
@@ -207,7 +209,7 @@ const MultiLevelMap = ({ data }) => {
                   {company.company}
                 </text>
                 {/* Total petitions text at the end of the bar */}
-                <text x={xOffset + 10} y={y.bandwidth() / 2} dy=".35em" style={{ fontSize: 12, fill: "#333" }}>
+                <text x={xOffset} y={y.bandwidth() / 2} dy=".35em" style={{ fontSize: 12, fill: "#333",fontWeight:'bold' }}>
                   {totalPetitions}
                 </text>
               </g>

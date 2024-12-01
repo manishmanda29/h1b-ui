@@ -5,10 +5,13 @@ import MultiLevelMap from "./components/MultiLevelMap";
 import EmployerVisualization from "./components/EmployerVisualization";
 import DataDashboard from "./components/DataDashboard";
 import { FormControl, MenuItem, Select } from '@mui/material';
+import { ColorRing } from 'react-loader-spinner'
+
 
 const Visualizations = () => {
   const [data, setData] = useState([]);
-  const [selectedVisualization, setSelectedVisualization] = useState('');
+  const [selectedVisualization, setSelectedVisualization] = useState('PetitionChart');
+  const [loader,setLoader]=useState(false);
 
   const handleChange = (event) => {
     setSelectedVisualization(event.target.value);
@@ -19,7 +22,7 @@ const Visualizations = () => {
   }, []);
 
   useEffect(() => {
-    console.log(data, "dataaaa");
+    console.log(data, "data loaded");
   }, [data]);
 
   const fetchSpreadsheetData = async () => {
@@ -29,11 +32,14 @@ const Visualizations = () => {
         if (storage) setData(storage);
       } else {
         const url = "https://sheetdb.io/api/v1/c10t6t6he1p2p";
+        setLoader(true);
+        
         const response = await fetch(url);
         const data = await response.json();
         setData(data);
-        let stringify = LZString.compress(JSON.stringify(data));
-        window.localStorage.setItem("data", stringify);
+        let compressedData = LZString.compress(JSON.stringify(data));
+        window.localStorage.setItem("data", compressedData);
+        setLoader(false)
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -43,25 +49,58 @@ const Visualizations = () => {
   const getTitleAndDescription = () => {
     switch (selectedVisualization) {
       case 'PetitionChart':
-        return { title: 'Petition Chart', description: 'A bar chart showing petitions data based on various parameters.' };
+        return {
+          title: 'Petition Chart',
+          description: 'Visualize petition data using a bar chart with breakdowns by approval and denial categories.'
+        };
       case 'EmployerVisualization':
-        return { title: 'Employer Visualization', description: 'A visualization showing employer-related petitions and their statistics.' };
+        return {
+          title: 'Employer Visualization',
+          description: 'Explore employer-related petitions and their outcomes using a detailed visualization.'
+        };
       case 'MultiLevelMap':
-        return { title: 'Multi-Level Petition Data Visualization by State and City', description: 'This interactive map allows users to explore petition data across U.S. states and cities, providing insights into the most petitioned cities and top companies involved. It features dynamic markers and bar charts for detailed exploration of petition trends.' };
+        return {
+          title: 'Multi-Level Petition Data Visualization',
+          description: 'Interactive U.S. map showcasing petition data by state and city, with top cities and employers highlighted.'
+        };
       default:
         return { title: '', description: '' };
     }
   };
 
   const getUserGuide = () => {
-    return (
-      <div>
-        <h3>User Guide</h3>
-        <p><strong>Hover over any data points</strong> in the visualizations to see additional details.</p>
-        <p><strong>Click</strong> on any bar in the chart or marker on the map for more in-depth information.</p>
-        <p><strong>Select a visualization</strong> from the dropdown to switch between different data views.</p>
-      </div>
-    );
+    switch (selectedVisualization) {
+      case 'PetitionChart':
+        return (
+          <div>
+            <h3>User Guide - Petition Chart</h3>
+            <ul>
+              <li>Hover over bars to view petition counts.</li>
+            </ul>
+          </div>
+        );
+      case 'EmployerVisualization':
+        return (
+          <div>
+            <h3>User Guide - Employer Visualization</h3>
+            <ul>
+              <li>hover on bars to  view detailed data.</li>
+            </ul>
+          </div>
+        );
+      case 'MultiLevelMap':
+        return (
+          <div>
+            <h3>User Guide - Multi-Level Map</h3>
+            <ul>
+              <li>click over states to view the  top 3 cities based on peitions</li>
+              <li>Click on city names to view the stacked bar chart of approvals and denials</li>
+            </ul>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   const { title, description } = getTitleAndDescription();
@@ -69,38 +108,62 @@ const Visualizations = () => {
   return (
     <>
       <DataDashboard data={data} />
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-        <label style={{ alignSelf: 'center', fontSize: 20 }}><strong>Select Visualization</strong></label>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <FormControl sx={{ minWidth: 200 }}>
-            <Select
-              labelId="visualization-select-label"
-              id="visualization-select"
-              value={selectedVisualization}
-              onChange={handleChange}
-            >
-              <MenuItem value="PetitionChart">Petition Chart</MenuItem>
-              <MenuItem value="EmployerVisualization">Employer Visualization</MenuItem>
-              <MenuItem value="MultiLevelMap">Multi-Level Map</MenuItem>
-            </Select>
-          </FormControl>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 20, margin: '20px 0' }}>
+        <label style={{ alignSelf: 'center', fontSize: 18, fontWeight: 'bold' }}>Select Visualization</label>
+        <FormControl sx={{ minWidth: 200 }}>
+          <Select
+            value={selectedVisualization || 'PetitionChart'}
+            onChange={handleChange}
+            displayEmpty
+          >
+            <MenuItem value="" disabled>Select...</MenuItem>
+            <MenuItem value="PetitionChart">Petition Chart</MenuItem>
+            <MenuItem value="EmployerVisualization">Employer Visualization</MenuItem>
+            <MenuItem value="MultiLevelMap">Multi-Level Map</MenuItem>
+          </Select>
+        </FormControl>
+      </div>
+
+      {title && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 40, alignItems: 'flex-start', marginTop: 20 }}>
+          <div style={{ maxWidth: '70%', textAlign: 'center' }}>
+            <h2>{title}</h2>
+            <p>{description}</p>
+          </div>
+          <div style={{ maxWidth: '30%' }}>
+            {getUserGuide()}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div style={{ display: "flex", justifyContent: 'center', flexDirection:'column',alignItems: 'center' }}>
-        {title && <h2>{title}</h2>}
-        {description && <p>{description}</p>}
+      <div style={{ display: "flex", justifyContent: 'center', marginTop: 20 }}>
+        {selectedVisualization === 'PetitionChart' && <PetitionChart data={data} />}
+        {selectedVisualization === 'EmployerVisualization' && <EmployerVisualization data={data} />}
+      
       </div>
-      <div style={{ display: "flex", justifyContent: 'center', alignSelf: 'center' }}>
-      {selectedVisualization === 'PetitionChart' && <PetitionChart data={data} />}
-      {selectedVisualization === 'EmployerVisualization' && <EmployerVisualization data={data} />}
-
-
- </div>
- {selectedVisualization === 'MultiLevelMap' && <MultiLevelMap data={data} />}
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
-        {getUserGuide()}
-      </div>
+      {selectedVisualization === 'MultiLevelMap' && <MultiLevelMap data={data} />}
+      {/* <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh", // Full viewport height
+        width: "100vw", // Full viewport width
+        position: "absolute", // Position it relative to the viewport
+        top: 0,
+        left: 0,
+      }}
+    >
+      <ColorRing
+        height="80"
+        visible={loader}
+        width="80"
+        ariaLabel="color-ring-loading"
+        wrapperStyle={{}} // Optional style for wrapper
+        wrapperClass="color-ring-wrapper"
+        colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
+      />
+    </div> */}
     </>
   );
 };

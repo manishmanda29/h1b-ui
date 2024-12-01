@@ -20,18 +20,18 @@ const Dashboard = () => {
       filter: false,
     },
     { headerName: 'index', field: 'index' },
-    { headerName: 'Industry (NAICS) Code', field: 'Industry (NAICS) Code', editable: true },
-    { headerName: 'Tax ID', field: 'Tax ID', editable: true },
-    { headerName: 'Employer (Petitioner) Name', field: 'Employer (Petitioner) Name', editable: true },
-    { headerName: 'Continuing Approval', field: 'Continuing Approval', editable: true },
-    { headerName: 'Continuing Denial', field: 'Continuing Denial', editable: true },
-    { headerName: 'Initial Approval', field: 'Initial Approval', editable: true },
-    { headerName: 'Initial Denial', field: 'Initial Denial', editable: true },
-    { headerName: 'Petitioner City', field: 'Petitioner City', editable: true },
-    { headerName: 'Petitioner State', field: 'Petitioner State', editable: true },
-    { headerName: 'Petitioner Zip Code', field: 'Petitioner Zip Code', editable: true },
-    { headerName: 'Latitude', field: 'Latitude', editable: true },
-    { headerName: 'Longitude', field: 'Longitude', editable: true },
+    { headerName: 'Industry (NAICS) Code', field: 'IndustryCode', editable: true },
+    // { headerName: 'Tax ID', field: 'Tax ID', editable: true },
+    { headerName: 'Employer (Petitioner) Name', field: 'EmployerName', editable: true },
+    { headerName: 'Continuing Approval', field: 'ContinuingApproval', editable: true },
+    { headerName: 'Continuing Denial', field: 'ContinuingDenial', editable: true },
+    { headerName: 'Initial Approval', field: 'InitialApproval', editable: true },
+    { headerName: 'Initial Denial', field: 'InitialDenial', editable: true },
+    { headerName: 'Petitioner City', field: 'PetitionerCity', editable: true },
+    { headerName: 'Petitioner State', field: 'PetitionerState', editable: true },
+    // { headerName: 'Petitioner Zip Code', field: 'PetitionerZip Code', editable: true },
+    // { headerName: 'Latitude', field: 'Latitude', editable: true },
+    // { headerName: 'Longitude', field: 'Longitude', editable: true },
    
   ];
 
@@ -50,7 +50,7 @@ const Dashboard = () => {
         setRows(storage)
       }
       else{
-      const url = process.env.URL;
+      const url = "https://sheetdb.io/api/v1/c10t6t6he1p2p";
       const response = await fetch(url);
       const data = await response.json();
       setRows(data);
@@ -71,7 +71,7 @@ const Dashboard = () => {
 
   const updateSpreadsheet = async (updatedRow) => {
     try {
-      const url = `${process.env.URL}/index/${updatedRow?.index}`;
+      const url = `https://sheetdb.io/api/v1/c10t6t6he1p2p/index/${updatedRow?.index}`;
       const body = {
         data: updatedRow,
       };
