@@ -21,9 +21,6 @@ const Visualizations = () => {
     fetchSpreadsheetData();
   }, []);
 
-  useEffect(() => {
-    console.log(data, "data loaded");
-  }, [data]);
 
   const fetchSpreadsheetData = async () => {
     try {
@@ -37,8 +34,8 @@ const Visualizations = () => {
         const response = await fetch(url);
         const data = await response.json();
         setData(data);
-        let compressedData = LZString.compress(JSON.stringify(data));
-        window.localStorage.setItem("data", compressedData);
+        // let compressedData = LZString.compress(JSON.stringify(data));
+        // window.localStorage.setItem("data", compressedData);
         setLoader(false)
       }
     } catch (error) {
@@ -135,14 +132,17 @@ const Visualizations = () => {
           </div>
         </div>
       )}
+      {!loader &&
 
       <div style={{ display: "flex", justifyContent: 'center', marginTop: 20 }}>
         {selectedVisualization === 'PetitionChart' && <PetitionChart data={data} />}
         {selectedVisualization === 'EmployerVisualization' && <EmployerVisualization data={data} />}
       
       </div>
+}
       {selectedVisualization === 'MultiLevelMap' && <MultiLevelMap data={data} />}
-      {/* <div
+      {loader && 
+      <div
       style={{
         display: "flex",
         justifyContent: "center",
@@ -163,7 +163,8 @@ const Visualizations = () => {
         wrapperClass="color-ring-wrapper"
         colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
       />
-    </div> */}
+    </div>
+}
     </>
   );
 };

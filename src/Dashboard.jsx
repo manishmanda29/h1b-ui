@@ -6,10 +6,13 @@ import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LZString from 'lz-string';
+import { ColorRing } from 'react-loader-spinner'
 
 const Dashboard = () => {
   const [rows, setRows] = useState([]);
   const [gridApi, setGridApi] = useState(null);
+  const [loader,setLoader]=useState(false);
+
 
   const columns = [
     {
@@ -42,20 +45,26 @@ const Dashboard = () => {
   const fetchSpreadsheetData = async () => {
     console.log("i am i  fetchingg")
     try {
+      if(window.localStorage.getItem("data")){
       let storage=JSON.parse(LZString.decompress(window.localStorage.getItem("data")));
       console.log(storage);
+      
       if(storage)
       {
         console.log("i am in if")
         setRows(storage)
       }
+    }
       else{
       const url = "https://sheetdb.io/api/v1/c10t6t6he1p2p";
       const response = await fetch(url);
+      setLoader(true);
       const data = await response.json();
       setRows(data);
+      
       let stringify=LZString.compress(JSON.stringify(data))
       window.localStorage.setItem("data",stringify)
+      setLoader(false)
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -176,7 +185,32 @@ const Dashboard = () => {
           onGridReady={onGridReady}
         />
       </div>
+      {loader && 
+      <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh", // Full viewport height
+        width: "100vw", // Full viewport width
+        position: "absolute", // Position it relative to the viewport
+        top: 0,
+        left: 0,
+      }}
+    >
+      <ColorRing
+        height="80"
+        visible={loader}
+        width="80"
+        ariaLabel="color-ring-loading"
+        wrapperStyle={{}} // Optional style for wrapper
+        wrapperClass="color-ring-wrapper"
+        colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
+      />
     </div>
+}
+    </div>
+    
   );
 };
 
