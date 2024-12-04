@@ -45,27 +45,14 @@ const Dashboard = () => {
   const fetchSpreadsheetData = async () => {
     console.log("i am i  fetchingg")
     try {
-      if(window.localStorage.getItem("data")){
-      let storage=JSON.parse(LZString.decompress(window.localStorage.getItem("data")));
-      console.log(storage);
-      
-      if(storage)
-      {
-        console.log("i am in if")
-        setRows(storage)
-      }
-    }
-      else{
+  
       const url = "https://sheetdb.io/api/v1/c10t6t6he1p2p";
       const response = await fetch(url);
       setLoader(true);
       const data = await response.json();
       setRows(data);
-      
-      let stringify=LZString.compress(JSON.stringify(data))
-      window.localStorage.setItem("data",stringify)
       setLoader(false)
-      }
+      
     } catch (error) {
       console.error('Error fetching data:', error);
     }
