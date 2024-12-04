@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 import * as d3 from "d3";
-
+import Tooltip from '@mui/material/Tooltip';
 // Geo URL for US states
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
@@ -65,6 +65,7 @@ const MultiLevelMap = ({ data }) => {
   const [highlightedState, setHighlightedState] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [companyData, setCompanyData] = useState([]);
+  const [tooltipContent, setTooltipContent] = useState("");
 
   const handleStateClick = (geo) => {
     const stateName = geo.properties.name;
@@ -91,7 +92,6 @@ const MultiLevelMap = ({ data }) => {
       return acc;
     }, {});
 
-    // Get top 5 cities by petitions
     const sortedCities = Object.values(cityPetitions)
       .filter((city) => city.latitude && city.longitude)
       .sort((a, b) => b.total - a.total)
@@ -133,12 +133,37 @@ const MultiLevelMap = ({ data }) => {
     }, {});
 
     const sortedCompanies = Object.values(companyPetitions)
-      .sort((a, b) => (b.initialApproval + b.initialDenial) - (a.initialApproval + a.initialDenial))
+      .sort(
+        (a, b) =>
+          b.initialApproval +
+          b.initialDenial -
+          (a.initialApproval + a.initialDenial)
+      )
       .slice(0, 5);
 
     setSelectedCity(city);
     setCompanyData(sortedCompanies);
   };
+
+  // Calculate state-wise petition counts
+  const petitionCounts = data.reduce((acc, curr) => {
+    const stateName = stateAbbreviations[curr.PetitionerState];
+
+    const totalPetitions =
+      parseInt(curr.InitialApproval || 0) + parseInt(curr.InitialDenial || 0);
+
+    if (!acc[stateName]) {
+      acc[stateName] = totalPetitions;
+    } else {
+      acc[stateName] += totalPetitions;
+    }
+    return acc;
+  }, {});
+
+  const colorScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(Object.values(petitionCounts))])
+    .range(["#d4e4f7", "#08306b"]);
 
   const getTextOffset = (index) => {
     return index % 2 === 0 ? -10 : 10; // Alternate positions for text
@@ -149,21 +174,21 @@ const MultiLevelMap = ({ data }) => {
     const width = 1000 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
     console.log(companyData)
-  
+
     // Set up scales
     const x = d3.scaleLinear()
       .domain([0, d3.max(companyData, d => d.initialApproval + d.initialDenial + d.continuingApproval + d.continuingDenial)])
       .range([0, width]);
-  
+
     const y = d3.scaleBand()
       .domain(companyData.map(d => d.company))
       .range([0, height])
       .padding(0.1);
-  
+
     const color = d3.scaleOrdinal()
       .domain(['initialApproval', 'initialDenial', 'continuingApproval', 'continuingDenial'])
       .range(['#69b3a2', '#ff9999', '#4f81bd', '#f07c00']);  // Color mapping
-  
+
     // Tooltip logic
     const tooltip = d3.select('body').append('div')
       .style('position', 'absolute')
@@ -173,7 +198,7 @@ const MultiLevelMap = ({ data }) => {
       .style('border-radius', '4px')
       .style('padding', '8px')
       .style('font-size', '12px');
-  
+
     return (
       <svg width={1000} height={height + margin.top + margin.bottom}>
         <g transform={`translate(${margin.left},${margin.top})`}>
@@ -209,78 +234,120 @@ const MultiLevelMap = ({ data }) => {
                   {company.company}
                 </text>
                 {/* Total petitions text at the end of the bar */}
-                <text x={xOffset} y={y.bandwidth() / 2} dy=".35em" style={{ fontSize: 12, fill: "#333",fontWeight:'bold' }}>
+                <text x={xOffset} y={y.bandwidth() / 2} dy=".35em" style={{ fontSize: 12, fill: "#333", fontWeight: 'bold' }}>
                   {totalPetitions}
                 </text>
               </g>
             );
           })}
         </g>
-  
+
         {/* Legend */}
-  {/* Legend */}
-  {/* <g transform={`translate(${width - 200}, ${margin.top-50})`}>
-  <text x={0} y={-10} style={{ fontSize: 12, fontWeight: 'bold' }}>Legend:</text>
-  {['initialApproval', 'initialDenial', 'continuingApproval', 'continuingDenial'].map((category, index) => (
-    <g key={category} transform={`translate(0, ${index * 20})`}>
-      <rect width={12} height={12} fill={color(category)} />
-      <text x={20} y={12} style={{ fontSize: 12 }}>
-        {category.replace(/([A-Z])/g, ' $1').toUpperCase()}
-      </text>
-    </g>
-  ))}
-</g> */}
+        {/* Legend */}
+        {/* <g transform={`translate(${width - 200}, ${margin.top-50})`}>
+    <text x={0} y={-10} style={{ fontSize: 12, fontWeight: 'bold' }}>Legend:</text>
+    {['initialApproval', 'initialDenial', 'continuingApproval', 'continuingDenial'].map((category, index) => (
+      <g key={category} transform={`translate(0, ${index * 20})`}>
+        <rect width={12} height={12} fill={color(category)} />
+        <text x={20} y={12} style={{ fontSize: 12 }}>
+          {category.replace(/([A-Z])/g, ' $1').toUpperCase()}
+        </text>
+      </g>
+    ))}
+  </g> */}
       </svg>
     );
   };
-  
+  const adjustedTextPosition = (city, index, cities) => {
+    const overlap = cities.some(
+      (otherCity, i) =>
+        i !== index &&
+        Math.abs(otherCity.latitude - city.latitude) < 0.2 &&
+        Math.abs(otherCity.longitude - city.longitude) < 0.2
+    );
+
+    return overlap ? 20 : 0; // Adjust position if overlap detected
+  };
 
   return (
-    <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-      <ComposableMap projection="geoAlbersUsa" projectionConfig={{center: [125, 29] }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <ComposableMap projection="geoAlbersUsa" projectionConfig={{ center: [125, 29] }}>
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rsmKey}
-                geography={geo}
-                onClick={() => handleStateClick(geo)}
-                style={{
-                  default: {
-                    fill: highlightedState === geo.properties.name ? "#F53" : "#D6D6DA",
-                    stroke: "#FFFFFF",
-                    strokeWidth: 0.5,
-                    outline: "none",
-                  },
-                  hover: {
-                    fill: "#F53",
-                    stroke: "#FFFFFF",
-                    strokeWidth: 0.5,
-                    outline: "none",
-                  },
-                  pressed: {
-                    fill: "#E42",
-                  },
-                }}
-              />
-            ))
+            geographies.map((geo) => {
+              const stateName = geo.properties.name;
+              const petitions = petitionCounts[stateName] || 0;
+              return (
+                <Tooltip title={geo.properties.name} placement="top">
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    onClick={() => handleStateClick(geo)}
+                    onMouseEnter={() => { console.log("i am heree") }}
+
+                    // // }setTooltipContent(`${stateName}: ${petitions} petitions`)}
+                    // onMouseLeave={() => setTooltipContent("")}
+                    style={{
+                      default: {
+                        fill: colorScale(petitions),
+                        stroke: "#FFFFFF",
+                        strokeWidth: 0.5,
+                        outline: "none",
+                      },
+                      hover: {
+                        fill: "#F53",
+                        stroke: "#FFFFFF",
+                        strokeWidth: 0.5,
+                        outline: "none",
+                      },
+                      pressed: {
+                        fill: "#E42",
+                      },
+                    }}
+                  />
+                </Tooltip>);
+            })
           }
+
         </Geographies>
 
-        {/* City markers */}
         {cities.map((city, index) => (
-          <Marker
-            key={index}
-            coordinates={[city.longitude, city.latitude]}
-            onClick={() => handleCityClick(city)}
-          >
-            <circle r={2} fill="green" style={{cursor:'pointer'}} />
-            <text textAnchor="middle" y={getTextOffset(index)} style={{ fontSize: 8, fill: "green",cursor:'pointer' }}>
-              {city.city} ({city.total})
-            </text>
+          <Marker key={index} coordinates={[city.longitude, city.latitude]} onClick={() => handleCityClick(city)}>
+            <circle r={2} fill="white" style={{ cursor: "pointer" }} />
+            <g>
+              <rect
+                x={-30} // Adjust position relative to text
+                y={index % 2 === 0 ? -18 : 2} // Adjust position based on `y` of the text
+                width={60} // Adjust width to fit text
+                height={10} // Adjust height to fit text
+                fill="#000000" // Background color (black)
+                rx={2} // Rounded corners (optional)
+                ry={2}
+              />
+              <text
+                textAnchor="middle"
+                y={index % 2 === 0 ? -10 : 10}
+                style={{ fontSize: 8, fill: "#F4ECF7", cursor: "pointer" }}
+              >
+                {city.city} ({city.total})
+              </text>
+            </g>
+
           </Marker>
         ))}
       </ComposableMap>
+
+      <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+        {["#d4e4f7", "#7292c3", "#36558e", "#08306b"].map((color, index) => (
+          <div key={index} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div style={{ width: "20px", height: "20px", background: color }}></div>
+            <span>{index === 0 ? "Low" : index === 3 ? "High" : ""}</span>
+          </div>
+        ))}
+      </div>
+
+
+
 
       {selectedCity && (
         <div>
@@ -289,6 +356,26 @@ const MultiLevelMap = ({ data }) => {
           {renderBarChart()}
         </div>
       )}
+
+
+      {tooltipContent && (
+        <div
+          style={{
+            position: "absolute",
+            background: "#333",
+            color: "#fff",
+            padding: "5px",
+            borderRadius: "5px",
+            pointerEvents: "none",
+            top: "10px",
+            left: "10px",
+          }}
+        >
+          {tooltipContent}
+        </div>
+      )}
+
+
     </div>
   );
 };
